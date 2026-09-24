@@ -1,0 +1,25 @@
+#ifndef EXT2_UTILS_H
+#define EXT2_UTILS_H
+#include <string>
+#include <vector>
+#include "../Estructuras/Str_Superblock/SUPERBLOCK.h"
+#include "../Estructuras/Str_Inode/INODE.h"
+namespace Ext2Utils {
+    bool LeerSuperbloque(const std::string& diskPath, int partitionStart, Estructuras::SUPERBLOCK& sb, std::string& errMsg);
+    // Lee un inodo dado su número 
+    bool LeerInodo(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, int inodoNum, Estructuras::INODE& inode, std::string& errMsg);
+    //inodo en tabla
+    bool EscribirInodo(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, int inodoNum, const Estructuras::INODE& inode, std::string& errMsg);
+    bool LeerArchivo(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, const Estructuras::INODE& inode, std::string& contenido, std::string& errMsg);
+    bool EscribirArchivo(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, int inodoNum, Estructuras::INODE& inode, const std::string& contenido, std::string& errMsg);
+    //Asigna un bloque libre 
+    int AsignarBloqueLibre(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, std::string& errMsg);
+    int CrearCarpetaEnPadre(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, int inodoPadre, const std::string& nombreCarpeta,  std::string& errMsg);
+    //Marca un inodo específico como usado en el bitmap de inodos
+    bool MarcarInodoUsado(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, int inodoNum, std::string& errMsg);
+    bool MarcarBloqueUsado(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, int bloqueNum, std::string& errMsg);
+    int BuscarInodoLibre(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, std::string& errMsg);
+    bool EncontrarSlotEnCarpeta(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, Estructuras::INODE& inodoPadre, int& slotNum,  long long& blockOffset,  std::string& errMsg);
+    int BuscarHijoEnCarpeta(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, const Estructuras::INODE& inodoPadre, const std::string& nombreHijo, std::string& errMsg);
+} 
+#endif
