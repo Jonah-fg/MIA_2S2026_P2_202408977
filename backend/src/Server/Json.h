@@ -3,10 +3,16 @@
 #include <string>
 #include <sstream>
 #include <vector>
-
+using namespace std;
 namespace Json{
 
-    inline std::string escape(const std::string& s) {
+    struct Campo{
+        string clave;
+        string valor;
+        bool crudo;
+    };
+
+    inline std::string escapar(const std::string& s) {
         std::ostringstream o;
         for (char c : s){
             switch (c) {
@@ -45,20 +51,20 @@ namespace Json{
     }
 
     //construccion objeto JSON simple a partir de pares clave-valor
-    inline std::string object(const std::vector<std::pair<std::string,std::string>>& kv, bool rawValues = false) {
+    inline std::string object(const vector<Campo>& campos) {
         std::ostringstream o;
         o <<"{";
-        for (size_t i =0; i<kv.size(); ++i) {
+        for (size_t i =0; i<campos.size(); ++i) {
             if (i > 0){
                 o << ",";
             }
-            o<< "\"" << escape(kv[i].first)<< "\":";
-            if (rawValues){
-                o << kv[i].second;
+            o<< "\"" << escapar(campos[i].clave)<< "\":";
+            if (campos[i].crudo){
+                o << campos[i].valor;
             }
 
             else {
-                o<<"\"" << escape(kv[i].second) <<"\"";
+                o<<"\"" <<escapar(campos[i].valor) <<"\"";
             }        
         }
         o << "}";
@@ -76,7 +82,7 @@ namespace Json{
                 o << items[i];
             }
             else  {
-                o << "\"" << escape(items[i]) << "\"";
+                o << "\"" << escapar(items[i]) << "\"";
             }  
         }
         o<<"]";

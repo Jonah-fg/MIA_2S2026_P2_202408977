@@ -38,7 +38,7 @@ namespace Analyzer {
         string actual;
         bool enComillas=false;
 
-        for (size_t i = 0; i<s.size(); ++i) {
+        for (size_t i =0; i<s.size(); ++i) {
             char c =s[i];
             if (c =='"') {
                 enComillas =!enComillas;
