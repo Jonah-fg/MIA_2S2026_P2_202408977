@@ -31,18 +31,18 @@ namespace Server{
         res.set_header("Access-Control-Allow-Origin", "*");
         res.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
         res.set_header("Access-Control-Allow-Headers", "Content-Type");
-    }
+    } 
 
     void iniciarServidor(){
         svr =new httplib::Server();
 
         //Ruta POST /execute: recibe un comando o script y devuelve la salida
         svr->Post("/api/execute", [](const httplib::Request& req, httplib::Response& res) {
-            setCors(res);
+           setCors(res);
 
             string comando=req.body;
             string salida =ejecutarScript(comando);
-            bool success= salida.find("[ERROR]") == string::npos && salida.find("ERROR:")== string::npos;
+            bool success= salida.find("[ERROR]") ==string::npos && salida.find("ERROR:")== string::npos;
 
             string body =Json::object({{"success", Json::boolean(success), true}, {"message", salida, false}, {"output",  salida, false}});
             res.set_content(body, "application/json");
@@ -58,7 +58,7 @@ namespace Server{
             setCors(res);
             res.set_content("{\"status\":\"ok\"}", "application/json");
         });
-        cout << "Servidor HTTP escuchando en http://0.0.0.0:8080"<< endl;
+        cout <<"Servidor HTTP escuchando en http://0.0.0.0:8080"<< endl;
         cout << "Endpoints: POST /api/execute | GET /api/health"<< endl;
         svr->listen("0.0.0.0", 8080);
     }
