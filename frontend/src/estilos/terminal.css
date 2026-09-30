@@ -94,3 +94,37 @@
     font-style: italic;
     margin-top: 10px;
 }
+
+/*  Acciones del encabezado*/
+.terminal-acciones {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.badge-sesion{
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.boton-login,
+.boton-logout{
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    transition: background 0.2s;
+}
+
+.boton-login  { background: #43a047; }
+.boton-login:hover  { background: #2e7d32; }
+
+.boton-logout { background: #e53935; }
+.boton-logout:hover { background: #c62828; }

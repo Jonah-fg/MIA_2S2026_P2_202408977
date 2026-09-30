@@ -1,8 +1,9 @@
 import {useState, useEffect, useRef }from "react";
 import { ejecutarComando, verificarBackend} from "../servicios/api";
 import "../estilos/terminal.css";
+import { useSesion } from "../contexto/SesionContext"
 
-export default function Terminal(){
+export default function Terminal({alIrALogin }){
 
     //Estados del componente
     const [entrada, setEntrada]= useState("");
@@ -14,6 +15,8 @@ export default function Terminal(){
 
     //eferencia al div de salida (para autoscroll)
     const refSalida= useRef(null);
+    const { activa, usuario, idParticion, cerrarSesion}= useSesion();
+
     //efectos
     useEffect(()=> {verificarBackend().then(setBackendActivo);}, []);
 
@@ -51,16 +54,44 @@ export default function Terminal(){
         }
     }
 
+    async function manejarCerrarSesion() {
+        await ejecutarComando("logout");
+        cerrarSesion();
+        //usuario en la salida
+        setSalidas(prev => [...prev,{
+            tipo:"exito",
+            texto: "Sesión cerrada correctamente.",
+        }]);
+    }
+
     //Render
     return (
         <div className="terminal-contenedor">
             <div className="terminal-encabezado">
                 <h1>MIA 2S2026 — Terminal</h1>
 
-                <div className={`estado-backend ${backendActivo ? "activo" : "inactivo"}`}>
-                    {backendActivo === null && "Verificando backend..."}
-                    {backendActivo === true  && "Backend conectado"}
-                    {backendActivo === false && "Backend NO disponible"}
+                <div className="terminal-acciones">
+                    <div className={`estado-backend ${backendActivo ? "activo" : "inactivo"}`}>
+                        {backendActivo === null && "Verificando backend..."}
+                        {backendActivo ===true  && "Backend conectado"}
+                        {backendActivo=== false && "Backend NO disponible"}
+                    </div>
+                
+                    {!activa &&(
+                        <button className="boton-login" onClick={alIrALogin}>
+                            Iniciar Sesión
+                        </button>
+                    )}
+                    {activa &&(
+                        <>
+                            <div className="badge-sesion">
+                                Sesión: <strong>{usuario}</strong> @ {idParticion}
+                            </div>
+                            <button className="boton-logout" onClick={manejarCerrarSesion}>
+                                Cerrar Sesión
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -77,19 +108,17 @@ export default function Terminal(){
                     Ejecutar (Ctrl+Enter)
                 </button>
             </div>
-            
+              
             <div className="terminal-salida" ref={refSalida}>
                 <label>Salida:</label>
-
                 {salidas.length === 0 && (
                     <div className="salida-vacia">
-                        Aquí se verán los resultados de los comandos.
+                        Aquí se verán los resultdos de los comandos.
                     </div>
                 )}
-
-                {salidas.map((bloque, i)=> (
+                {salidas.map((bloque, i) =>(
                     <pre key={i} className={`bloque-${bloque.tipo}`}>
-                        {bloque.tipo === "entrada" ? "> " : ""}
+                        {bloque.tipo === "entrada" ? "> ": ""}
                         {bloque.texto}
                     </pre>
                 ))}
