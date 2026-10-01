@@ -5,12 +5,15 @@
 #include "../../Estructuras/Str_Fileblock/FILEBLOCK.h"
 #include "../../Estructuras/Str_Folderblock/FOLDERBLOCK.h"
 #include <regex>
+#include "../../Estructuras/Str_Journal/JOURNAL.h"
 #include <algorithm>
 #include <cctype>
+#include <fstream>
 #include <sstream>
 #include <cmath>
 #include <cstring>
 #include <ctime>
+
 using namespace std;
 
 namespace Comandos{
@@ -24,23 +27,37 @@ namespace Comandos{
     static string joinTokens(const vector<string>& tokens){
         string result;
         for (size_t i=0; i<tokens.size(); ++i) {
-            if (i > 0) result +=" ";
+            if (i > 0) 
+                result +=" ";
+
             result +=tokens[i];
         }
         return result;
     }
 
     // Calcula "n" (número de inodos) que caben en la partición
-    static int32_t calculate_N(const Estructuras::PARTITION& part) {
+    static int32_t calculate_N(const Estructuras::PARTITION& part, bool esExt3) {
         long long numerador = static_cast<long long>(part.Partition_size) - static_cast<long long>(sizeof(Estructuras::SUPERBLOCK));
-        long long denominador = 4+static_cast<long long>(sizeof(Estructuras::INODE)) + (3 * static_cast<long long>(sizeof(Estructuras::FILEBLOCK)));
+        long long denominador = 0;
+        if(esExt3){
+            denominador = static_cast<long long>(sizeof(Estructuras::JOURNAL))+ 4 + static_cast<long long>(sizeof(Estructuras::INODE))+(3 * static_cast<long long>(sizeof(Estructuras::FILEBLOCK)));
+        }
+        else{
+             //fórmula EXT2: n +3n + sizeof(INODE) +3*sizeof(FILEBLOCK)
+            denominador=4 + static_cast<long long>(sizeof(Estructuras::INODE))+ (3*static_cast<long long>(sizeof(Estructuras::FILEBLOCK)));
+        }
         double n =floor(static_cast<double>(numerador) / static_cast<double>(denominador));
         return static_cast<int32_t>(n);
     }
 
     //Se arma el superbloque con los offsets calculados
-    static Estructuras::SUPERBLOCK Create_SuperBlock(const Estructuras::PARTITION& part, int32_t n_Value) {
-        int32_t bm_inode_start =part.Partition_start + static_cast<int32_t>(sizeof(Estructuras::SUPERBLOCK));
+    static Estructuras::SUPERBLOCK Create_SuperBlock(const Estructuras::PARTITION& part, int32_t n_Value, bool esExt3) {
+        int32_t journal_start=part.Partition_start+ static_cast<int32_t>(sizeof(Estructuras::SUPERBLOCK));
+        int32_t journal_size = 0;
+        if(esExt3){
+            journal_size =n_Value*static_cast<int32_t>(sizeof(Estructuras::JOURNAL));
+        }
+        int32_t bm_inode_start = journal_start+ journal_size;
         int32_t bm_block_start= bm_inode_start + n_Value;
         int32_t inode_start=bm_block_start + (3 * n_Value);
         int32_t block_start =inode_start + (static_cast<int32_t>(sizeof(Estructuras::INODE)) * n_Value);
@@ -64,8 +81,40 @@ namespace Comandos{
         sb.Sb_bm_block_start=bm_block_start;
         sb.Sb_inode_start=inode_start;
         sb.Sb_block_start =block_start;
+        //journaling
+        sb.Sb_journal_start =esExt3 ? journal_start : 0;
+        sb.Sb_journal_count= esExt3 ? n_Value : 0;
+        sb.Sb_journal_size  = journal_size;
         return sb;
     }
+
+    static bool InicializarJournal(const string& diskPath, const Estructuras::SUPERBLOCK& sb, string& errMsg) {
+        if (sb.Sb_journal_count<= 0) 
+            return true; //EXT2 no tiene jornal
+
+        fstream archivo(diskPath, ios::binary | ios::in | ios::out);
+        if (!archivo.is_open()){
+            errMsg = "ERROR: No se pudo abrir el dico para inicializar journaling";
+            return false;
+        }
+        Estructuras::JOURNAL entrada;
+        memset(&entrada, 0, sizeof(entrada));
+        entrada.j_count = 0;
+
+        long long offset= sb.Sb_journal_start;
+        for (int32_t i= 0; i<sb.Sb_journal_count; ++i) {
+            archivo.seekp(offset, ios::beg);
+            archivo.write(reinterpret_cast<const char*>(&entrada), sizeof(Estructuras::JOURNAL));
+            if (!archivo){
+                errMsg = "ERROR: No se pudo escribir entrada vacía de journal";
+                return false;
+            }
+            offset +=sizeof(Estructuras::JOURNAL);
+        }
+        errMsg.clear();
+        return true;
+    }
+
 
     //planea todo el formateo
     static bool Create_MKFS(const MKFS& mkfs, string& errMsg){
@@ -75,20 +124,28 @@ namespace Comandos{
         if (!Global::GetMountedPartition(mkfs.Id, mountedPart, diskPath, errMsg)) {
             return false;
         }
+        bool esExt3 = (mkfs.Fs=="3fs");
 
         //Calculo de n
-        int32_t n_Value =calculate_N(mountedPart);
+        int32_t n_Value =calculate_N(mountedPart, esExt3);
         if (n_Value <= 0){
-            errMsg ="La partición es demsiado pequeña para EXT2 (n=" + to_string(n_Value)+")";
+            errMsg ="La partición es demsiado pequeña para formatear (n=" + to_string(n_Value)+")";
             return false;
         }
 
         //Creacion superbloque en memoria
-        Estructuras::SUPERBLOCK sb=Create_SuperBlock(mountedPart, n_Value);
+        Estructuras::SUPERBLOCK sb=Create_SuperBlock(mountedPart, n_Value, esExt3);
 
         //Creacion bitmaps 
         if (!sb.Create_Bit_Maps(diskPath, errMsg)) {
             return false;
+        }
+
+        //Inicializacion área de journaling solo EXT3
+        if (esExt3){
+            if (!InicializarJournal(diskPath, sb, errMsg)) {
+                return false;
+            }
         }
 
         //Creacion raíz y users.txt
@@ -108,7 +165,7 @@ namespace Comandos{
     CommandResult Mkfs_Command(const vector<string>& tokens) {
         MKFS mkfs;
         string atributos= joinTokens(tokens);
-        static const regex lexic(R"(-id=[^\s]+|-type=[^\s]+)", regex::icase);
+        static const regex lexic(R"(-id=[^\s]+|-type=[^\s]+|-fs=[^\s]+)", regex::icase);
 
         vector<string> found;
         auto begin =sregex_iterator(atributos.begin(), atributos.end(), lexic);
@@ -130,7 +187,9 @@ namespace Comandos{
             }
 
             if (key =="-id") {
-                if (value.empty()) return {false, "ERROR: id vacío"};
+                if (value.empty()) 
+                    return {false, "ERROR: id vacío"};
+
                 mkfs.Id = value;
             } 
             else if (key == "-type"){
@@ -140,19 +199,29 @@ namespace Comandos{
 
                 mkfs.Type =v;
             } 
+            else if (key=="-fs") {
+                string v= toLowerStr(value);
+                if (v != "2fs" && v != "3fs"){
+                    return {false, "ERROR: fs debe ser 2fs o 3fs"};
+                }
+                mkfs.Fs= v;
+            }
             else {
-                return{false, "ERROR: parámetro desconocido: " + key};
+                return{false, "ERROR: parámetro descoocido: " + key};
             }
         }
+
         if (mkfs.Id.empty()) {
             return {false, "ERROR: falta -id"};
+        }
+        if (mkfs.Fs.empty()) {
+            mkfs.Fs ="2fs"; 
         }
 
         string errMsg;
         if (!Create_MKFS(mkfs, errMsg))
             return {false, errMsg};
 
-        return {true, "COMANDO MKFS: partición formateada con xito"};
+        return {true, "COMANDO MKFS: partición formateada con éxito como " + mkfs.Fs};
     }
-
 } 

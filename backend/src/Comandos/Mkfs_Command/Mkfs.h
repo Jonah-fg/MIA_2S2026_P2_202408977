@@ -8,6 +8,7 @@ namespace Comandos{
     struct MKFS{
         std::string Id;
         std::string Type;  
+        std::string Fs;
     };
     CommandResult Mkfs_Command(const std::vector<std::string>& tokens);
 

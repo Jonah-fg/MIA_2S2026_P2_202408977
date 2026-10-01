@@ -23,6 +23,9 @@ namespace Estructuras {
         int32_t Sb_bm_block_start;  // byte inicio bitmap de bloques
         int32_t Sb_inode_start;     // byte inicio tabla de inodos
         int32_t Sb_block_start; 
+         int32_t Sb_journal_start;   // byte donde empieza el áea del journal
+        int32_t Sb_journal_count;   
+        int32_t Sb_journal_size; //tamaño total del área del journal en byte
 
         //Serialización
         bool Serialize(const std::string& path, long long offset, std::string& errMsg);
