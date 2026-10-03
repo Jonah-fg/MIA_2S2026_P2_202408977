@@ -18,7 +18,9 @@
 #include "../Comandos/Mkfile_Command/Mkfile.h"
 #include "../Comandos/Mkdir_Command/Mkdir.h"
 #include "../Comandos/Cat_Command/Cat.h"
+#include "../Comandos/Rename_Command/Rename.h"
 #include "../Comandos/Rmusr_Command/Rmusr.h"
+#include "../Comandos/Unmount_Command/Unmount.h"
 #include "../Comandos/Chgrp_Command/Chgrp.h"
 #include "../Comandos/Journaling_Command/Journaling.h"
 #include "../Comandos/Rep_Command/Rep.h"
@@ -294,9 +296,29 @@ namespace Analyzer {
                 errorMsg =result.message;
             }
         }
+        else if (tokens[0]=="unmount"){
+            Comandos::CommandResult result= Comandos::Unmount_Command(params);
+            if(result.success){
+                msg =result.message;
+            }
+            else {
+                hasError = true;
+                errorMsg =result.message;
+            }
+        }
+        else if (tokens[0]=="rename"){
+            Comandos::CommandResult result= Comandos::Rename_Command(params);
+            if(result.success){
+                msg = result.message;
+            }
+            else {
+                hasError = true;
+                errorMsg =result.message;
+            }
+        }
         else{
             hasError= true;
-            errorMsg = "Comando no reconocido: "+ tokens[0];
+            errorMsg ="Comando no reconocido: "+ tokens[0];
         }
     
         if (hasError){
