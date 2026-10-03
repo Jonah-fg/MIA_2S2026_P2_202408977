@@ -3,6 +3,7 @@
 #include "../../Global/MountedPartitions.h"
 #include "../../Utils/Ext2Utils.h"
 #include "../../Estructuras/Str_Folderblock/FOLDERBLOCK.h"
+#include "../../Utils/JournalUtils.h"
 #include <regex>
 #include <sstream>
 using namespace std;
@@ -147,6 +148,10 @@ namespace Comandos{
 
             output += contenido;
             if (archivos.size() > 1) output += "\n";
+        }
+        for (const string& ruta : archivos){
+            string journalErr;
+            JournalUtils::RegistrarOperacion(diskPath, sb, "cat", ruta, "", journalErr);
         }
         return {true, output};
     }

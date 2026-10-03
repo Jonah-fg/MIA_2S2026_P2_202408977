@@ -2,6 +2,7 @@
 #include "../../Global/MountedPartitions.h"
 #include "../../Global/Sesion.h"
 #include <regex>
+#include "../../Utils/JournalUtils.h"
 #include "../../Utils/Ext2Utils.h"
 #include <sstream>
 #include <cstring>
@@ -178,6 +179,11 @@ namespace Comandos{
         Global::sesionActual.uid =uidEncontrado;
         Global::sesionActual.gid= gidEncontrado;
         Global::sesionActual.esRoot=esRoot;
+        //registro en el journal si aplica EXT3
+        {
+            string journalErr;
+            JournalUtils::RegistrarOperacion(diskPath, sb, "login", "/", usuario,journalErr);
+        }
         return {true, "LOGIN: Sesión iniciada como '" +usuario + "'"};
     }
 
