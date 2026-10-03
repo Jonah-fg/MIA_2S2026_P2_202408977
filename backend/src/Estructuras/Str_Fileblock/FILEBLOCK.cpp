@@ -50,8 +50,6 @@ namespace Estructuras
 
     void FILEBLOCK::Print() const
     {
-        // %.64s limita la impresion a los 64 bytes del arreglo, por si no
-        // hay un byte nulo de terminacion entre el contenido real
         std::printf("%.64s", B_content);
     }
 

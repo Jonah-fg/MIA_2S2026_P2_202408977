@@ -5,6 +5,7 @@
 #include "../../Estructuras/Str_Folderblock/FOLDERBLOCK.h"
 #include <regex>
 #include <sstream>
+#include "../../Utils/JournalUtils.h"
 #include <cstring>
 #include <ctime>
 
@@ -13,8 +14,7 @@ using namespace std;
 namespace Comandos {
 
     static string toLowerStr(string s) {
-        transform(s.begin(), s.end(), s.begin(),
-                  [](unsigned char c) { return tolower(c); });
+        transform(s.begin(), s.end(), s.begin(),[](unsigned char c) { return tolower(c); });
         return s;
     }
 
@@ -61,7 +61,8 @@ namespace Comandos {
                 return -1;
             }
             inodoActual = hijo;
-            if (!Ext2Utils::LeerInodo(diskPath, sb, inodoActual, inode, errMsg)) return -1;
+            if (!Ext2Utils::LeerInodo(diskPath, sb, inodoActual, inode, errMsg)) 
+                return -1;
         }
         return inodoActual;
     }
@@ -113,7 +114,8 @@ namespace Comandos {
             }
         }
 
-        if (path.empty()) return {false, "ERROR: falta -path"};
+        if (path.empty())
+            return {false, "ERROR: falta -path"};
 
         string diskPath = Global::sesionActual.diskPath;
         string id = Global::sesionActual.idParticion;
@@ -136,7 +138,7 @@ namespace Comandos {
             return {false, "ERROR: Ruta no existe: " + errMsg};
         }
 
-        // Si es recursivo → crear las carpetas intermedias
+        //Si es recursivo → crear las carpetas intermedias
         if (inodoPadre == -1 && recursive) {
             vector<string> partes = splitPath(path);
             string nombreFinal = partes.back();
@@ -181,7 +183,11 @@ namespace Comandos {
                     return {false, "ERROR: No se pudo actualizar superbloque: " + errMsg};
                 }
             }
-
+        //Registro en el journal (si aplica EXT3)
+            {
+                string journalErr;
+                JournalUtils::RegistrarOperacion(diskPath, sb, "mkdir", path, "", journalErr);
+            }       
             return {true, "MKDIR: Carpeta '" + nombreFinal + "' creada recursivamente (inodo " + to_string(nuevo) + ")"};
         }
 
@@ -211,8 +217,11 @@ namespace Comandos {
         if (!sb.Serialize(diskPath, mountedPart.Partition_start, errMsg)) {
             return {false, "ERROR: No se pudo actualizar superbloque: " + errMsg};
         }
-
+        
+        {
+            string journalErr;
+            JournalUtils::RegistrarOperacion(diskPath, sb, "mkdir", path, "", journalErr);
+        }
         return {true, "MKDIR: Carpeta '" + nombreCarpeta + "' creada (inodo " + to_string(nuevo) + ")"};
     }
-
-} // namespace Comandos
+} 

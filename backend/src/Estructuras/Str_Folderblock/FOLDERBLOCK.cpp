@@ -37,7 +37,7 @@ namespace Estructuras{
     }
 
     void FOLDERBLOCK::Print() const {
-        for (int i = 0; i < 4; ++i) {
+        for (int i = 0; i<4; ++i) {
             printf("Contenido %d:\n", i+1);
             printf("\tB_name: %.12s\n", B_content[i].B_name);
             printf("\tB_inodo: %d\n", B_content[i].B_inodo);

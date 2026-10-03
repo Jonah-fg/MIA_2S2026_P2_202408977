@@ -2,6 +2,7 @@
 #include "../../Global/Sesion.h"
 #include "../../Global/MountedPartitions.h"
 #include "../../Utils/Ext2Utils.h"
+#include "../../Utils/JournalUtils.h"
 #include "../../Estructuras/Str_Folderblock/FOLDERBLOCK.h"
 #include "../../Estructuras/Str_Fileblock/FILEBLOCK.h"
 #include <iostream>
@@ -16,8 +17,7 @@ using namespace std;
 namespace Comandos {
 
     static string toLowerStr(string s) {
-        transform(s.begin(), s.end(), s.begin(),
-                  [](unsigned char c) { return tolower(c); });
+        transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return tolower(c); });
         return s;
     }
 
@@ -204,7 +204,7 @@ namespace Comandos {
             nombreArchivo = nombreFinal;
         }
 
-        // Leer inodo de la carpeta padre
+        //Leer inodo de la carpeta padre
         Estructuras::INODE inodePadreObj;
         if (!Ext2Utils::LeerInodo(diskPath, sb, inodoPadre, inodePadreObj, errMsg)) {
             return {false, "ERROR: No se pudo leer inodo padre: " + errMsg};
@@ -223,7 +223,7 @@ namespace Comandos {
             return {false, "ERROR: " + errMsg};
         }
 
-        // Re-escribir inodo padre (por si se extendió)
+        //Re-escribir inodo padre 
         if (!Ext2Utils::EscribirInodo(diskPath, sb, inodoPadre, inodePadreObj, errMsg)) {
             return {false, "ERROR: " + errMsg};
         }
@@ -249,7 +249,8 @@ namespace Comandos {
             for (int i = 0; i < size; ++i) {
                 contenido.push_back('0' + (i % 10));
             }
-        } else {
+        }
+        else{
             contenido = "";
         }
 
@@ -272,7 +273,8 @@ namespace Comandos {
         newInode.I_perm[0] = '6';
         newInode.I_perm[1] = '6';
         newInode.I_perm[2] = '4';
-        for (int i = 0; i < 15; ++i) newInode.I_block[i] = -1;
+        for (int i = 0; i < 15; ++i)
+            newInode.I_block[i] = -1;
 
         // Escribir contenido (asigna bloques) o solo el inodo si está vacío
         if (!contenido.empty()) {
@@ -282,13 +284,14 @@ namespace Comandos {
             if (!Ext2Utils::EscribirArchivo(diskPath, sb, nuevoInodo, newInode, contenido, errMsg)) {
                 return {false, "ERROR: No se pudo escribir contenido: " + errMsg};
             }
-        } else {
+        } 
+        else {
             if (!Ext2Utils::EscribirInodo(diskPath, sb, nuevoInodo, newInode, errMsg)) {
                 return {false, "ERROR: No se pudo escribir inodo: " + errMsg};
             }
         }
 
-        // Marcar inodo como usado
+        //Marcador inodo usado
         if (!Ext2Utils::MarcarInodoUsado(diskPath, sb, nuevoInodo, errMsg)) {
             return {false, "ERROR: " + errMsg};
         }
@@ -307,12 +310,15 @@ namespace Comandos {
             return {false, "ERROR: No se pudo actualizar carpeta padre: " + errMsg};
         }
 
-        // Actualizar fecha del padre
         inodePadreObj.I_mtime = static_cast<float>(time(nullptr));
         if (!Ext2Utils::EscribirInodo(diskPath, sb, inodoPadre, inodePadreObj, errMsg)) {
             return {false, "ERROR: No se pudo actualizar inodo padre: " + errMsg};
         }
-
+        
+        {
+            string journalErr;
+            JournalUtils::RegistrarOperacion(diskPath, sb, "mkfile", path, contenido, journalErr);
+        }
         return {true, "MKFILE: Archivo '" + nombreArchivo + "' creado exitosamente (inodo " + to_string(nuevoInodo) + ")"};
     }
 } 

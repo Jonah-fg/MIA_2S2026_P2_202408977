@@ -64,7 +64,7 @@ namespace Comandos{
 
         Estructuras::SUPERBLOCK sb;
         memset(&sb, 0, sizeof(sb));
-        sb.Sb_filesystem_type =2; 
+        sb.Sb_filesystem_type = esExt3 ? 3: 2;
         sb.Sb_inodes_count = 0;
         sb.Sb_blocks_count=0;
         sb.Sb_free_inodes_count = n_Value;

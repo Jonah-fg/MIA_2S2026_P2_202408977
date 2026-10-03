@@ -15,12 +15,12 @@ namespace UsersUtils{
         std::string grupo;     
         std::string nombre;
         std::string contrasena;
-        bool eliminado;    // true si UID== 0
+        bool eliminado;   
     };
     // Lee el archivo users.txt desde el disco y devuelve listas de grupos y usuarios
     bool ParsearUsersTXT(const std::string& contenido, std::vector<Grupo>& grupos, std::vector<Usuario>& usuarios, std::string& errMsg);
 
-    // Genera el contenido de users.txt a partir de las litas
+    //Genera el contenido de users.txt a partir de las litas
     std::string GenerarUsersTXT(const std::vector<Grupo>& grupos, const std::vector<Usuario>& usuarios);
     int SiguienteGID(const std::vector<Grupo>& grupos);
     int SiguienteUID(const std::vector<Usuario>& usuarios);

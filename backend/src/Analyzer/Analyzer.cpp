@@ -20,7 +20,9 @@
 #include "../Comandos/Cat_Command/Cat.h"
 #include "../Comandos/Rmusr_Command/Rmusr.h"
 #include "../Comandos/Chgrp_Command/Chgrp.h"
+#include "../Comandos/Journaling_Command/Journaling.h"
 #include "../Comandos/Rep_Command/Rep.h"
+#include "../Comandos/Loss_Command/Loss.h"
 
 using namespace std;
 namespace Analyzer {
@@ -264,6 +266,26 @@ namespace Analyzer {
         }
         else if (tokens[0] =="rep"){
             Comandos::CommandResult result= Comandos::Rep_Command(params);
+            if (result.success) {
+                msg =result.message;
+            }
+            else{
+                hasError= true;
+                errorMsg =result.message;
+            }
+        }
+        else if (tokens[0] == "journaling"){
+            Comandos::CommandResult result= Comandos::Journaling_Command(params);
+            if (result.success) {
+                msg =result.message;
+            }
+            else {
+                hasError= true;
+                errorMsg =result.message;
+            }
+        }
+        else if (tokens[0] == "loss"){
+            Comandos::CommandResult result= Comandos::Loss_Command(params);
             if (result.success) {
                 msg =result.message;
             }

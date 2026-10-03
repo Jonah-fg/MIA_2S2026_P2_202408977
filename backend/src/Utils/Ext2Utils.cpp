@@ -9,15 +9,14 @@
 
 using namespace std;
 
-namespace Ext2Utils {
+namespace Ext2Utils{
 
     bool LeerSuperbloque(const string& diskPath, int partitionStart,
                          Estructuras::SUPERBLOCK& sb, string& errMsg) {
         return sb.Deserialize(diskPath, partitionStart, errMsg);
     }
 
-    bool LeerInodo(const string& diskPath, const Estructuras::SUPERBLOCK& sb,
-                   int inodoNum, Estructuras::INODE& inode, string& errMsg) {
+    bool LeerInodo(const string& diskPath, const Estructuras::SUPERBLOCK& sb, int inodoNum, Estructuras::INODE& inode, string& errMsg) {
         long long offset = sb.Sb_inode_start + (inodoNum * sb.Sb_inode_size);
         return inode.Deserialize(diskPath, offset, errMsg);
     }
