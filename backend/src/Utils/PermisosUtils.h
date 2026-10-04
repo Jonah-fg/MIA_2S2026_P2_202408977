@@ -5,5 +5,6 @@
 namespace PermisosUtils {
     //Verifica si el usuario actual (root/uidActual) puede escribir sobre el inodo.
     bool PuedeEscribir(const Estructuras::INODE& inodo, bool esRoot, int uidActual);
+    bool PuedeLeer(const Estructuras::INODE& inodo, bool esRoot, int uidActual);
 }
 #endif

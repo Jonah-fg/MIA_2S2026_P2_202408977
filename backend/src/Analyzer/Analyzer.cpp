@@ -20,11 +20,14 @@
 #include "../Comandos/Cat_Command/Cat.h"
 #include "../Comandos/Rename_Command/Rename.h"
 #include "../Comandos/Rmusr_Command/Rmusr.h"
+#include "../Comandos/Move_Command/Move.h"
 #include "../Comandos/Unmount_Command/Unmount.h"
 #include "../Comandos/Chgrp_Command/Chgrp.h"
 #include "../Comandos/Journaling_Command/Journaling.h"
 #include "../Comandos/Rep_Command/Rep.h"
 #include "../Comandos/Loss_Command/Loss.h"
+#include "../Comandos/Remove_Command/Remove.h"
+#include "../Comandos/Find_Command/Find.h"
 
 using namespace std;
 namespace Analyzer {
@@ -316,6 +319,36 @@ namespace Analyzer {
                 errorMsg =result.message;
             }
         }
+        else if (tokens[0]=="remove") {
+            Comandos::CommandResult result= Comandos::Remove_Command(params);
+            if(result.success){
+                msg = result.message;
+            }
+            else {
+                hasError = true;
+                errorMsg =result.message;
+            }
+        }
+        else if (tokens[0] == "find") {
+            Comandos::CommandResult result= Comandos::Find_Command(params);
+            if(result.success){
+                msg = result.message;
+            }
+            else {
+                hasError = true;
+                errorMsg =result.message;
+            }
+        }
+        else if (tokens[0] == "move") {
+            Comandos::CommandResult result= Comandos::Move_Command(params);
+            if(result.success){
+                msg = result.message;
+            }
+            else {
+                hasError = true;
+                errorMsg = result.message;
+            }
+        }
         else{
             hasError= true;
             errorMsg ="Comando no reconocido: "+ tokens[0];
@@ -332,7 +365,7 @@ namespace Analyzer {
         stringstream buffer;
         streambuf* oldCout= std::cout.rdbuf(buffer.rdbuf());
 
-        Analyze(inputs); //llamada funcion
+        Analyze(inputs);//llamada funcion
 
         cout.rdbuf(oldCout);
         return buffer.str();

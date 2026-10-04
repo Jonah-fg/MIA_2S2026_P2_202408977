@@ -21,5 +21,10 @@ namespace Ext2Utils {
     int BuscarInodoLibre(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, std::string& errMsg);
     bool EncontrarSlotEnCarpeta(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, Estructuras::INODE& inodoPadre, int& slotNum,  long long& blockOffset,  std::string& errMsg);
     int BuscarHijoEnCarpeta(const std::string& diskPath, const Estructuras::SUPERBLOCK& sb, const Estructuras::INODE& inodoPadre, const std::string& nombreHijo, std::string& errMsg);
+      //marca 0 en bitmap, actuliza superbloque
+    bool LiberarInodo(const std::string& diskPath, Estructuras::SUPERBLOCK& sb, int inodoNum, std::string& errMsg);
+
+    //marca 0 en bitmap, actualiza superbloqe
+    bool LiberarBloque(const std::string& diskPath, Estructuras::SUPERBLOCK& sb, int bloqueNum, std::string& errMsg);
 } 
 #endif

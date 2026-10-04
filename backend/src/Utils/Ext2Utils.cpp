@@ -308,7 +308,7 @@ namespace Ext2Utils{
         newInode.I_ctime = static_cast<float>(time(nullptr));
         newInode.I_mtime = static_cast<float>(time(nullptr));
         newInode.I_type[0] = '0';
-        newInode.I_perm[0] = '6';
+        newInode.I_perm[0] ='6';
         newInode.I_perm[1] = '6';
         newInode.I_perm[2] = '4';
         newInode.I_block[0] = bloque;
@@ -365,5 +365,51 @@ namespace Ext2Utils{
             }
         }
         return -1;
+    }
+
+    bool LiberarInodo(const string& diskPath, Estructuras::SUPERBLOCK& sb, int inodoNum, string& errMsg) {
+        fstream file(diskPath, ios::binary | ios::in | ios::out);
+        if(!file.is_open()) {
+            errMsg ="No se pudo abrir el dico para liberar inodo";
+            return false;
+        }
+        long long pos=sb.Sb_bm_inode_start + inodoNum;
+        file.seekp(pos, ios::beg);
+        char bit ='0';
+        file.write(&bit, 1);
+        if (!file){
+            errMsg= "Error escribiendo en el bitmap de inodos";
+            return false;
+        }
+        file.close();
+
+        //contadores del superbloque
+        if (sb.Sb_inodes_count > 0) 
+            sb.Sb_inodes_count--;
+
+        sb.Sb_free_inodes_count++;
+        return true;
+    }
+
+    bool LiberarBloque(const string& diskPath, Estructuras::SUPERBLOCK& sb, int bloqueNum, string& errMsg) {
+        fstream file(diskPath, ios::binary | ios::in | ios::out);
+        if (!file.is_open()){
+            errMsg = "No se pudo abrir el disco para liberar bloque";
+            return false;
+        }
+        long long pos =sb.Sb_bm_block_start + bloqueNum;
+        file.seekp(pos, ios::beg);
+        char bit='0';
+        file.write(&bit, 1);
+        if (!file){
+            errMsg ="Error escribiendo en el bitmap de bloques";
+            return false;
+        }
+        file.close();
+        if (sb.Sb_blocks_count > 0) {
+            sb.Sb_blocks_count--;
+        }
+        sb.Sb_free_blocks_count++;
+        return true;
     }
 } 
