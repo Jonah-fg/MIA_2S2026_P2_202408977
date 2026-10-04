@@ -10,6 +10,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include "../Comandos/Chown_Command/Chown.h"
 #include "../Comandos/Login_Command/Login.h"
 #include "../Comandos/Logout_Command/Logout.h"
 #include "../Comandos/Mkgrp_Command/Mkgrp.h"
@@ -20,6 +21,7 @@
 #include "../Comandos/Cat_Command/Cat.h"
 #include "../Comandos/Rename_Command/Rename.h"
 #include "../Comandos/Rmusr_Command/Rmusr.h"
+#include "../Comandos/Copy_Command/Copy.h"
 #include "../Comandos/Move_Command/Move.h"
 #include "../Comandos/Unmount_Command/Unmount.h"
 #include "../Comandos/Chgrp_Command/Chgrp.h"
@@ -341,6 +343,26 @@ namespace Analyzer {
         }
         else if (tokens[0] == "move") {
             Comandos::CommandResult result= Comandos::Move_Command(params);
+            if(result.success){
+                msg = result.message;
+            }
+            else {
+                hasError = true;
+                errorMsg = result.message;
+            }
+        }
+        else if (tokens[0] == "copy") {
+            Comandos::CommandResult result= Comandos::Copy_Command(params);
+            if(result.success){
+                msg = result.message;
+            }
+            else{
+                hasError = true;
+                errorMsg = result.message;
+            }
+        }
+        else if (tokens[0]== "chown") {
+            Comandos::CommandResult result= Comandos::Chown_Command(params);
             if(result.success){
                 msg = result.message;
             }

@@ -83,4 +83,13 @@ namespace UsersUtils {
         }
         return maxUid + 1;
     }
+
+    int BuscarUIDPorNombre(const vector<Usuario>& usuarios, const string& nombre) {
+        for (const auto& u : usuarios) {
+            if(u.nombre == nombre && !u.eliminado) {
+                return u.uid;
+            }
+        }
+        return -1;
+    }
 } 

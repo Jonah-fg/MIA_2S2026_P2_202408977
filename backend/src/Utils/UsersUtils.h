@@ -24,5 +24,6 @@ namespace UsersUtils{
     std::string GenerarUsersTXT(const std::vector<Grupo>& grupos, const std::vector<Usuario>& usuarios);
     int SiguienteGID(const std::vector<Grupo>& grupos);
     int SiguienteUID(const std::vector<Usuario>& usuarios);
+    int BuscarUIDPorNombre(const std::vector<Usuario>& usuarios, const std::string& nombre);
 } 
 #endif
