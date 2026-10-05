@@ -10,6 +10,9 @@ namespace Estructuras  {
         string Type;
         string Fit;
         string Name;
+        string Delete; //"fast" o "full" 
+        int Add = 0;  
+        bool TieneAdd=false;  
     };
     bool Struct_FDISK(const FDISK& fdisk, string& errMsg);
 }

@@ -4,12 +4,12 @@
 #include "../../Utils/Utilities.h"
 #include <algorithm>
 #include <cstring>
+#include <vector>
 #include <fstream>
 using namespace std;
 
 namespace Estructuras
 {
-
     // Funciones auxiliares privadas de este archivo, una por cada tipo de particion que se puede crear con FDISK
     namespace
     {
@@ -234,9 +234,6 @@ namespace Estructuras
 
                 PARTITION logicalPartition{};
                 logicalPartition.CreatePartition(static_cast<int>(logicalStart), static_cast<int>(sizeBytes), fdisk.Type, fdisk.Fit, fdisk.Name);
-                // La logica hereda el mismo Partition_id que su extendida
-                // contenedora (para identificar a que disco/particion
-                // "padre" pertenece)
                 memcpy(logicalPartition.Partition_id, extendedPartition.Partition_id, sizeof(logicalPartition.Partition_id));
 
                 file.seekp(logicalStart, ios::beg);
@@ -329,14 +326,142 @@ namespace Estructuras
             return true;
         }
 
+
+        //eliminacion de una particion primaria o extendida del MBR.
+        bool borrarParticion(const FDISK& fdisk, bool full, string& errMsg){
+            MBR mbr;
+            if(!mbr.DeserializeMBR(fdisk.Path, errMsg)){
+                errMsg = "ERROR: No se pudo leer MBR: " + errMsg;
+                return false;
+            }
+
+            int idx =-1;
+            PARTITION* part=mbr.GetPartitionByName(fdisk.Name, idx, errMsg);
+            if (!part) {
+                errMsg = "ERROR: No existe una partcion llamada '" + fdisk.Name + "'";
+                return false;
+            }
+
+            if (part->Partition_status[0]=='2'){
+                errMsg = "ERROR: La particion ya esta vacia";
+                return false;
+            }
+            bool eraExtendida= (part->Partition_type[0] == 'E');
+
+            int32_t inicio= part->Partition_start;
+            int32_t tam = part->Partition_size;
+
+            //Si es extendida, se borram cadena de EBRs relenando con \0 full
+            if (eraExtendida && full){
+                fstream archivo(fdisk.Path, ios::binary | ios::in | ios::out);
+                if (!archivo.is_open()){
+                    errMsg = "ERROR: No se pudo abrir disco";
+                    return false;
+                }
+                std::vector<char> ceros(tam, 0);
+                archivo.seekp(inicio, ios::beg);
+                archivo.write(ceros.data(), tam);
+                archivo.close();
+            } 
+            else if (full){
+                //es Primaria: rellenado con \0 su espacio
+                fstream archivo(fdisk.Path, ios::binary | ios::in | ios::out);
+                if (!archivo.is_open()){
+                    errMsg="ERROR: No se pudo abrir disco";
+                    return false;
+                }
+                std::vector<char> ceros(tam, 0);
+                archivo.seekp(inicio,ios::beg);
+                archivo.write(ceros.data(), tam);
+                archivo.close();
+            }
+  
+            *part= EmptyPartition();
+            if(!mbr.SerializeMBR(fdisk.Path, errMsg)){
+                errMsg = "ERROR: No se pudo actualizar MBR";
+                return false;
+            }
+            return true;
+        }
+
+        //ajuste del tamaño de una particion primaria (-add positivo o negativo).
+        bool agregarEspacio(const FDISK& fdisk, long long deltaBytes, string& errMsg) {
+            MBR mbr;
+            if(!mbr.DeserializeMBR(fdisk.Path, errMsg)){
+                errMsg = "ERROR: No se pudo leer MBR: " + errMsg;
+                return false;
+            }
+
+            int idx =-1;
+            PARTITION* part = mbr.GetPartitionByName(fdisk.Name, idx, errMsg);
+            if (!part) {
+                errMsg="ERROR: No existe una particion llamada '" + fdisk.Name + "'";
+                return false;
+            }
+
+            if (part->Partition_type[0] != 'P') {
+                errMsg = "ERROR: Solo se puede agregar espacio a particiones primarias";
+                return false;
+            }
+
+            int32_t nuevoTam = part->Partition_size + (int32_t)deltaBytes;
+            if (nuevoTam <= 0) {
+                errMsg ="ERROR: El tamano resuante seria negativo o cero";
+                return false;
+            }
+
+            //verificacion que quepa en el disco
+            long long nuevoFin = (long long)part->Partition_start+ (long long)nuevoTam;
+            if (nuevoFin > mbr.Mbr_size) {
+                errMsg ="ERROR: No hay suficiente espacio despues de la particion";
+                return false;
+            }
+
+            //verificacion que no choque con la siguiente particion ocupada
+            for (int i = 0; i < 4; ++i){
+                if (&mbr.Mbr_partitions[i]==part) 
+                    continue;
+
+                const PARTITION& otra= mbr.Mbr_partitions[i];
+                if(otra.Partition_status[0] =='2') 
+                    continue;
+
+                long long otroInicio=otra.Partition_start;
+                long long otroFin= otroInicio + otra.Partition_size;
+                if (nuevoFin> otroInicio && (long long)part->Partition_start< otroFin) {
+                    errMsg ="ERROR: La particion chocaria con otra existente";
+                    return false;
+                }
+            }
+            part->Partition_size = nuevoTam;
+            if (!mbr.SerializeMBR(fdisk.Path, errMsg)) {
+                errMsg="ERROR: No se pudo actualizar MBR";
+                return false;
+            }
+            return true;
+        }
     }
 
+    //recbe los datos ya validdos del comando FDISK (tamaño, unidad, path disco, etc) despacha a la funcion correspndiente segun el tipo de particion
+    bool Struct_FDISK(const FDISK &fdisk, string &errMsg){
+        //Modo delete
+        if (!fdisk.Delete.empty()){
+            bool full= (fdisk.Delete== "full");
+            return borrarParticion(fdisk, full, errMsg);
+        }
 
-    // Recibe los datos ya validados del comando FDISK (tamaño, unidad, path del disco, tipo, ajuste y nombre) y
-    // despacha a la funcion correspondiente segun el tipo de particion
-    // pedido
-    bool Struct_FDISK(const FDISK &fdisk, string &errMsg)
-    {
+        // modo add
+        if (fdisk.TieneAdd){
+            long long deltaBytes=0;
+            if(!Utilities::ConvertBytes(std::abs(fdisk.Add), fdisk.Unit.empty() ? "K" : fdisk.Unit, deltaBytes, errMsg)) {
+                return false;
+            }
+            if(fdisk.Add< 0) 
+                deltaBytes= -deltaBytes;
+
+            return agregarEspacio(fdisk, deltaBytes, errMsg);
+        }
+        
         long long sizeBytes= 0;
         if (!Utilities::ConvertBytes(fdisk.Size, fdisk.Unit, sizeBytes, errMsg))
         {
@@ -352,11 +477,10 @@ namespace Estructuras
         {
             return C_extendedPartition(fdisk, sizeBytes, errMsg);
         }
-        else if (fdisk.Type == "L")
+        else if (fdisk.Type== "L")
         {
             return C_logicalPartition(fdisk, sizeBytes, errMsg);
         }
-
         errMsg ="ERROR: Tipo de particion no reconocido";
         return false;
     }

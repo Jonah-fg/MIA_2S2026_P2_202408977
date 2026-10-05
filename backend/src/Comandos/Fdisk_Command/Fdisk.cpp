@@ -26,7 +26,7 @@ namespace Comandos {
 
     CommandResult Fdisk_Command(const vector<string>& tokens) {
         string atributos = joinTokens(tokens);
-        static const regex lexic(R"(-size=\d+|-unit=[bBkKmM]|-fit=[bBfF]{2}|-path="[^"]+"|-path=[^\s]+|-type=[pPeElL]|-name="[^"]+"|-name=[^\s]+)", regex::icase);
+        static const regex lexic(R"(-size=\d+|-unit=[bBkKmM]|-fit=[bBfFwW]{2}|-path="[^"]+"|-path=[^\s]+|-type=[pPeElL]|-name="[^"]+"|-name=[^\s]+|-delete=[^\s]+|-add=-?\d+)", regex::icase);
 
         vector<string> found;
         auto begin =sregex_iterator(atributos.begin(), atributos.end(), lexic);
@@ -41,7 +41,12 @@ namespace Comandos {
                 }
             }
         }
-        bool hasSize= false, hasPath = false, hasName = false;
+        bool hasSize= false;
+        bool hasPath = false; 
+        bool hasName = false;
+        string deleteVal;
+        int addVal = 0;
+        bool tieneAdd =false;
         int sizeVal =0;
         string unitVal, fitVal, pathVal, typeVal, nameVal;
 
@@ -104,14 +109,32 @@ namespace Comandos {
                     return {false, "ERROR: Name no puede estar vacío"};
                 nameVal =value;
                 hasName = true;
-            } 
+            }
+            else if (key == "-delete") {
+                string v = toLowerStr(value);
+                if (v != "fast" && v != "full") {
+                    return {false, "ERROR: delete debe ser 'fast' o 'full'"};
+                }
+                deleteVal = v;
+            }
+            else if (key == "-add") {
+                try {
+                    addVal=stoi(value);
+                    tieneAdd= true;
+                } 
+                catch (...){
+                    return {false, "ERROR: add debe ser un entero"};
+                }
+            }
             else{
                 return {false, "ERROR: Parámetro no reconocido: " + key};
             }
         }
 
-        if (!hasSize) {
-            return{false, "ERROR: Falta -size"};
+        bool esDelete = !deleteVal.empty();
+        bool esAdd=tieneAdd;
+        if (!esDelete && !esAdd && !hasSize) {
+            return {false, "ERROR: Falta -size"};
         }
         if (!hasPath) {
             return {false, "ERROR: Falta -path"};
@@ -138,11 +161,20 @@ namespace Comandos {
         fdisk.Type= typeVal;
         fdisk.Fit =fitVal;
         fdisk.Name=nameVal;
+        fdisk.Delete = deleteVal;
+        fdisk.Add = addVal;
+        fdisk.TieneAdd = tieneAdd;
 
         string errMsg;
         if (!Estructuras::Struct_FDISK(fdisk, errMsg))
             return {false, "ERROR: "+ errMsg};
 
+        if (esDelete){
+            return {true, "FDISK: Operacion delete=" + deleteVal + "completada"};
+        }
+        if (esAdd) {
+            return {true,"FDISK: Operacion add=" + to_string(addVal) +" completada"};
+        }
         return {true, "FDISK: Partición creada con xito"};
     }
 }
