@@ -1,0 +1,88 @@
+.explorador-contenedor {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding:20px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.explorador-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.explorador-header h1 {
+    color: #2c3e50;
+    font-size:22px;
+}
+
+.boton-volver {
+    padding: 8px 16px;
+    background: #607d8b;
+    color: white;
+    border: none;
+    border-radius:6px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.boton-volver:hover { background: #455a64; }
+
+.explorador-seccion {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f7f9fc;
+    border-radius: 10px;
+}
+
+.explorador-seccion h2 {
+    font-size: 16px;
+    color: #34495e;
+    margin-bottom: 14px;
+}
+
+.explorador-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.explorador-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 100px;
+}
+
+.explorador-item:hover { background: #eef4fb; }
+.explorador-item.seleccionado {
+    border-color: #1e88e5;
+    background: #e3f2fd;
+}
+
+.explorador-icono { font-size: 42px; margin-bottom: 8px; }
+
+.explorador-nombre {
+    font-size:13px;
+    color: #333;
+    text-align:center;
+    word-break: break-all;
+}
+
+.explorador-vacio { color: #888; font-style: italic; }
+.explorador-boton {
+    padding: 10px 20px;
+    background: #1e88e5;
+    color: white;
+    border: none;
+    border-radius:6px;
+    cursor:pointer;
+    font-size: 14px;
+    margin-top: 8px;
+}
+.explorador-boton:disabled { background: #90caf9; cursor: not-allowed; }

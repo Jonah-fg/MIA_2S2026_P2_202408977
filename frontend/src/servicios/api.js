@@ -42,7 +42,26 @@ export async function verificarBackend() {
         const respuesta = await fetch(`${URL_BACKEND}/api/health`);
         return respuesta.ok;
     } 
-    catch {
+    catch{
         return false;
     }
 }
+
+/**
+ * Obtencion de la lista de discos .mia existentes
+ * @returns {Promise<string[]>}
+ */
+export async function obtenerDiscos() {
+    try{
+        const respuesta =await fetch(`${URL_BACKEND}/api/disks`);
+        if(!respuesta.ok) {
+            return [];
+        }
+        const datos =await respuesta.json();
+        return datos.discos || [];
+    } 
+    catch{
+        return [];
+    }
+}
+

@@ -3,7 +3,7 @@ import { ejecutarComando, verificarBackend} from "../servicios/api";
 import "../estilos/terminal.css";
 import { useSesion } from "../contexto/SesionContext"
 
-export default function Terminal({alIrALogin }){
+export default function Terminal({alIrALogin, alIrAExplorador}){
 
     //Estados del componente
     const [entrada, setEntrada]= useState("");
@@ -87,6 +87,12 @@ export default function Terminal({alIrALogin }){
                             <div className="badge-sesion">
                                 Sesión: <strong>{usuario}</strong> @ {idParticion}
                             </div>
+                             <button
+                                className="boton-explorador"
+                                onClick={alIrAExplorador}
+                            >
+                                Explorador
+                            </button>
                             <button className="boton-logout" onClick={manejarCerrarSesion}>
                                 Cerrar Sesión
                             </button>
@@ -116,9 +122,9 @@ export default function Terminal({alIrALogin }){
                         Aquí se verán los resultdos de los comandos.
                     </div>
                 )}
-                {salidas.map((bloque, i) =>(
+                {salidas.map((bloque, i)=>(
                     <pre key={i} className={`bloque-${bloque.tipo}`}>
-                        {bloque.tipo === "entrada" ? "> ": ""}
+                        {bloque.tipo=== "entrada" ? "> ": ""}
                         {bloque.texto}
                     </pre>
                 ))}

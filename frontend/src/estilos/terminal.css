@@ -128,3 +128,15 @@
 
 .boton-logout { background: #e53935; }
 .boton-logout:hover { background: #c62828; }
+.boton-explorador{
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    background: #6a1b9a;
+    transition: background 0.2s;
+}
+.boton-explorador:hover { background: #4a148c; }
