@@ -65,3 +65,41 @@ export async function obtenerDiscos() {
     }
 }
 
+/**
+ * obtencion particiones discos
+ * @param {string} pathDisco
+ * @returns {Promise<Array>}
+ */
+export async function obtenerParticiones(pathDisco) {
+    try{
+        const url=`${URL_BACKEND}/api/disks/partitions?path=${encodeURIComponent(pathDisco)}`;
+        const respuesta =await fetch(url);
+        if (!respuesta.ok) return [];
+        const datos = await respuesta.json();
+        return datos.partitions|| [];
+    } 
+    catch{
+        return [];
+    }
+}
+
+/**
+ * Lista el conenido de una carpeta en una partición montada
+ * @param {string} id
+ * @param {string} ruta
+ * @returns {Promise<Array>}
+ */
+export async function listarCarpeta(id, ruta) {
+    try{
+        const url =`${URL_BACKEND}/api/fs/list?id=${encodeURIComponent(id)}&path=${encodeURIComponent(ruta)}`;
+        const respuesta =await fetch(url);
+        if (!respuesta.ok) return [];
+        const datos=await respuesta.json();
+        return datos.items || [];
+    } 
+    catch{
+        return [];
+    }
+}
+
+

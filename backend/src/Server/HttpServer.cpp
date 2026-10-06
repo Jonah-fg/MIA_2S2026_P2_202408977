@@ -89,7 +89,7 @@ namespace Server{
 
         //armado JSON con los hijos
         ostringstream salida;
-        salida <<"{\"items\":[";
+        salida<<"{\"items\":[";
 
         bool primera=true;
         for (int b =0; b<12; ++b){
@@ -186,6 +186,7 @@ namespace Server{
                     }
                 }
             }
+
             sort(discos.begin(), discos.end());
             ostringstream salida;
             salida<< "{\"discos\":[";
@@ -204,61 +205,93 @@ namespace Server{
             setCors(res);
 
             if (!req.has_param("path")) {
-                res.status=400;
-                res.set_content("{\"error\":\"falta paraetro path\"}", "application/json");
+                res.status = 400;
+                res.set_content("{\"error\":\"falta parametro path\"}", "application/json");
                 return;
             }
 
-            string diskPath= req.get_param_value("path");
+            string diskPath = req.get_param_value("path");
+
             Estructuras::MBR mbr;
             string errMsg;
-            if(!mbr.DeserializeMBR(diskPath, errMsg)){
-                res.status = 500;
-                res.set_content("{\"error\":\""+Json::escapar(errMsg)+ "\"}", "application/json");
+            if (!mbr.DeserializeMBR(diskPath, errMsg)) {
+                res.status =500;
+                res.set_content("{\"error\":\"" + Json::escapar(errMsg) + "\"}", "application/json");
                 return;
             }
 
-            //armado array JSON de particiones con sus campos
             ostringstream salida;
-            salida <<"{\"partitions\":[";
-            bool primera=true;
-            for (int i =0; i< 4; ++i) {
-                const Estructuras::PARTITION& p = mbr.Mbr_partitions[i];
-                if (p.Partition_status[0] =='2') 
-                    continue; 
+            salida << "{\"partitions\":[";
 
-                //convesion nombre y id (char[]) a strng
+            bool primera = true;
+            for (int i = 0; i<4; ++i) {
+                const Estructuras::PARTITION& p = mbr.Mbr_partitions[i];
+                if (p.Partition_status[0] == '2'){
+                    continue;
+                }
+
                 string nombre(p.Partition_name, sizeof(p.Partition_name));
-                size_t nul= nombre.find('\0');
-                if (nul!=string::npos){
+                size_t nul = nombre.find('\0');
+                if(nul != string::npos) {
                     nombre =nombre.substr(0, nul);
                 }
 
                 string pid(p.Partition_id, sizeof(p.Partition_id));
-                nul =pid.find('\0');
+                nul=pid.find('\0');
                 if (nul != string::npos) {
                     pid = pid.substr(0, nul);
                 }
 
-                if(!primera) 
+                if (!primera) 
                     salida << ",";
 
-                primera=false;
+                primera =false;
 
-                salida<< "{";
-                salida <<"\"name\":\""        << Json::escapar(nombre)                      << "\",";
-                salida << "\"type\":\""        << p.Partition_type[0]                        <<"\",";
-                salida <<"\"fit\":\""         << p.Partition_fit[0]                         << "\",";
-                salida << "\"status\":\""     <<p.Partition_status[0]                      <<"\",";
-                salida <<"\"start\":"        << p.Partition_start                          << ",";
-                salida << "\"size\":"         << p.Partition_size                           <<",";
-                salida<< "\"id\":\""          << Json::escapar(pid)                         << "\"";
+                salida << "{";
+                salida<< "\"name\":\""   <<Json::escapar(nombre) << "\",";
+                salida << "\"type\":\""   << p.Partition_type[0] << "\",";
+                salida << "\"fit\":\""    << p.Partition_fit[0] << "\",";
+                salida << "\"status\":\"" << p.Partition_status[0] << "\",";
+                salida <<"\"start\":"    <<p.Partition_start << ",";
+                salida << "\"size\":"     << p.Partition_size << ",";
+                salida<< "\"id\":\""     <<Json::escapar(pid) << "\"";
                 salida << "}";
             }
-            salida<< "]}";
+
+            salida <<"]}";
             res.set_content(salida.str(), "application/json");
-        }); 
-        
+        });
+
+        //GET /api/fs/list?id=<ID>&path=<ruta>
+        svr->Get("/api/fs/list", [](const httplib::Request& req, httplib::Response& res) {
+            setCors(res);
+
+            if (!req.has_param("id") || !req.has_param("path")) {
+                res.status = 400;
+                res.set_content("{\"error\":\"faltan parametros id y path\"}", "application/json");
+                return;
+            }
+
+            string id=req.get_param_value("id");
+            string ruta =req.get_param_value("path");
+
+            string errMsg;
+            string json=listarCarpeta(id, ruta, errMsg);
+            if (json.empty()) {
+                res.status = 500;
+                res.set_content("{\"error\":\"" + Json::escapar(errMsg) + "\"}", "application/json");
+                return;
+            }
+            res.set_content(json, "application/json");
+        });
+
+        cout <<"Servidor HTTP escuchando en http://0.0.0.0:8080" << endl;
+        cout<< "Endpoints:" << endl;
+        cout << "  POST /api/execute" << endl;
+        cout<< "  GET /api/health" << endl;
+        cout <<"  GET /api/disks" << endl;
+        cout << "  GET  /api/disks/partitions?path=<ruta>" << endl;
+        cout <<"  GET /api/fs/list?id=<ID>&path=<ruta>" << endl;
         svr->listen("0.0.0.0", 8080);
     }
 
