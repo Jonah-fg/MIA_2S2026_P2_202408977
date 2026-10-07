@@ -3,7 +3,7 @@ import { ejecutarComando, verificarBackend} from "../servicios/api";
 import "../estilos/terminal.css";
 import { useSesion } from "../contexto/SesionContext"
 
-export default function Terminal({alIrALogin, alIrAExplorador}){
+export default function Terminal({alIrALogin, alIrAExplorador, alIrAJournaling}){
 
     //Estados del componente
     const [entrada, setEntrada]= useState("");
@@ -11,7 +11,7 @@ export default function Terminal({alIrALogin, alIrAExplorador}){
     //Lista de bloques que se muestran en la salida.
     const [salidas, setSalidas]= useState([]);
 
-    const [backendActivo, setBackendActivo] = useState(null);
+    const [backendActivo, setBackendActivo] =useState(null);
 
     //eferencia al div de salida (para autoscroll)
     const refSalida= useRef(null);
@@ -87,7 +87,11 @@ export default function Terminal({alIrALogin, alIrAExplorador}){
                             <div className="badge-sesion">
                                 Sesión: <strong>{usuario}</strong> @ {idParticion}
                             </div>
-                             <button
+                            <button className="boton-journaling" onClick={alIrAJournaling}>
+                                Journaling
+                            </button>
+                            
+                            <button
                                 className="boton-explorador"
                                 onClick={alIrAExplorador}
                             >
@@ -117,7 +121,7 @@ export default function Terminal({alIrALogin, alIrAExplorador}){
               
             <div className="terminal-salida" ref={refSalida}>
                 <label>Salida:</label>
-                {salidas.length === 0 && (
+                {salidas.length === 0 &&(
                     <div className="salida-vacia">
                         Aquí se verán los resultdos de los comandos.
                     </div>

@@ -140,3 +140,16 @@
     transition: background 0.2s;
 }
 .boton-explorador:hover { background: #4a148c; }
+
+.boton-journaling{
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    background: #00897b;
+    transition: background 0.2s;
+}
+.boton-journaling:hover { background: #00695c; }

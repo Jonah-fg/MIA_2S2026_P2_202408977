@@ -144,3 +144,23 @@
     color: #2c3e50;
     margin-bottom:12px;
 }
+
+.explorador-subtitulo {
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #34495e;
+}
+.explorador-contenido {
+    background: #1e1e1e;
+    color: #e0e0e0;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: Consolas,monospace;
+    font-size: 13px;
+    max-height: 200px;
+    overflow-y:auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin:0;
+}

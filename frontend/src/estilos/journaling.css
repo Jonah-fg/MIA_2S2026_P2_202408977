@@ -1,0 +1,97 @@
+.journaling-contenedor {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    font-family:'Segoe UI', Arial, sans-serif;
+}
+
+.journaling-header {
+    display: flex;
+    justify-content:space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.journaling-header h1 {
+    color: #2c3e50;
+    font-size: 22px;
+}
+
+.journaling-info {
+    background: #e3f2fd;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    color: #1565c0;
+}
+.journaling-error {
+    background: #fdecea;
+    color: #b71c1c;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.journaling-tabla-contenedor {
+    overflow-x:auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.journaling-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    font-size: 13px;
+}
+
+.journaling-tabla thead {
+    background: #2e7d32;
+    color: white;
+}
+.journaling-tabla th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.journaling-tabla td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+}
+
+.journaling-tabla tbody tr:hover {
+    background: #f5f9fc;
+}
+.journaling-badge {
+    display:inline-block;
+    padding: 4px 10px;
+    background: #c8e6c9;
+    color:#1b5e20;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.journaling-path{
+    font-family: Consolas, monospace;
+    color: #333;
+}
+
+.journaling-content{
+    font-family: Consolas, monospace;
+    color: #555;
+    max-width: 260px;
+    word-break: break-all;
+}
+
+.boton-volver{
+    padding: 8px 16px;
+    background: #607d8b;
+    color: white;
+    border:none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size:13px;
+}
+.boton-volver:hover { background: #455a64; }

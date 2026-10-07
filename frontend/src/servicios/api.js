@@ -93,10 +93,52 @@ export async function listarCarpeta(id, ruta) {
     try{
         const url =`${URL_BACKEND}/api/fs/list?id=${encodeURIComponent(id)}&path=${encodeURIComponent(ruta)}`;
         const respuesta =await fetch(url);
-        if (!respuesta.ok) return [];
+        if (!respuesta.ok)
+             return [];
+
         const datos=await respuesta.json();
         return datos.items || [];
     } 
+    catch{
+        return [];
+    }
+}
+
+/**
+ * @param {string} id
+ * @param {string} ruta
+ * @returns {Promise<string>}
+ */
+export async function leerArchivo(id, ruta) {
+    try{
+        const url= `${URL_BACKEND}/api/fs/file?id=${encodeURIComponent(id)}&path=${encodeURIComponent(ruta)}`;
+        const respuesta =await fetch(url);
+        if (!respuesta.ok){
+            return "";
+        }
+        const datos=await respuesta.json();
+        return datos.content || "";
+    } 
+    catch{
+        return "";
+    }
+}
+
+/**
+ *obtencion de las entradas del journal de una particion EXT3
+ * @param {string} id
+ * @returns {Promise<Array>}
+ */
+export async function obtenerJournal(id) {
+    try {
+        const url= `${URL_BACKEND}/api/fs/journal?id=${encodeURIComponent(id)}`;
+        const respuesta = await fetch(url);
+        if (!respuesta.ok) {
+            return [];
+        }
+        const datos = await respuesta.json();
+        return datos.entries || [];
+    }
     catch{
         return [];
     }

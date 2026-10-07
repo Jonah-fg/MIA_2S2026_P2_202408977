@@ -12,6 +12,9 @@
 #include "../Utils/Ext2Utils.h"
 #include "../Estructuras/Str_Folderblock/FOLDERBLOCK.h"
 #include "Json.h"
+#include "../Estructuras/Str_Superblock/SUPERBLOCK.h"
+#include "../Estructuras/Str_Journal/JOURNAL.h"
+#include "../Utils/JournalUtils.h"
 using namespace std;
 
 namespace Server{
@@ -134,6 +137,140 @@ namespace Server{
         salida << "]}";
         return salida.str();
     }
+
+    //Lectura del contenido de un archivo de texto en una paricion montada
+    static string leerArchivoTexto(const string& idParticion, const string& ruta, string& errMsg) {
+        Estructuras::PARTITION mountedPart;
+        string diskPath;
+        if (!Global::GetMountedPartition(idParticion, mountedPart, diskPath, errMsg)) {
+            return "";
+        }
+
+        Estructuras::SUPERBLOCK sb;
+        if (!Ext2Utils::LeerSuperbloque(diskPath, mountedPart.Partition_start, sb, errMsg)) {
+            return "";
+        }
+
+        int inodoActual= 0;
+        Estructuras::INODE inode;
+        if (!Ext2Utils::LeerInodo(diskPath, sb, inodoActual, inode, errMsg)) {
+            return "";
+        }
+
+        vector<string> partes;
+        stringstream ss(ruta);
+        string item;
+        while (getline(ss, item, '/')) {
+            if (!item.empty()) partes.push_back(item);
+        }
+
+        for (const string& comp : partes){
+            int hijo=Ext2Utils::BuscarHijoEnCarpeta(diskPath, sb, inode, comp, errMsg);
+            if (hijo == -1) {
+                errMsg = "No existe: "+ comp;
+                return "";
+            }
+            inodoActual = hijo;
+            if (!Ext2Utils::LeerInodo(diskPath, sb, inodoActual, inode, errMsg)) {
+                return "";
+            }
+        }
+        if (inode.I_type[0]!='1') {
+            errMsg = "No es un archivo";
+            return "";
+        }
+
+        string contenido;
+        if (!Ext2Utils::LeerArchivo(diskPath, sb, inode, contenido, errMsg)) {
+            return "";
+        }
+
+        // JSON
+        ostringstream salida;
+        salida << "{\"content\":\""<<Json::escapar(contenido) << "\"}";
+        return salida.str();
+    }
+
+
+
+    //evuelve JSON: {"entries": [{no, operation, path, content, date}, ...]}
+    static string leerJournal(const string& idParticion, string& errMsg) {
+        Estructuras::PARTITION mountedPart;
+        string diskPath;
+        if(!Global::GetMountedPartition(idParticion, mountedPart, diskPath, errMsg)) {
+            return "";
+        }
+
+        Estructuras::SUPERBLOCK sb;
+        if (!Ext2Utils::LeerSuperbloque(diskPath, mountedPart.Partition_start, sb, errMsg)) {
+            return "";
+        }
+
+        if (!JournalUtils::EsExt3(sb)){
+            errMsg ="La particion no es EXT3 (no tiene journaling)";
+            return "";
+        }
+        if (sb.Sb_journal_count <= 0 || sb.Sb_journal_start <= 0) {
+            errMsg ="La particion no tiene journaling inicializado";
+            return "";
+        }
+
+        ifstream archivo(diskPath, ios::binary);
+        if (!archivo.is_open()) {
+            errMsg="No se pudo abir el disco";
+            return "";
+        }
+
+        ostringstream salida;
+        salida << "{\"entries\":[";
+        bool primera= true;
+        long long offset = sb.Sb_journal_start;
+
+        for (int32_t i = 0; i<sb.Sb_journal_count; ++i) {
+            Estructuras::JOURNAL entrada;
+            archivo.seekg(offset, ios::beg);
+            archivo.read(reinterpret_cast<char*>(&entrada), sizeof(Estructuras::JOURNAL));
+            if (!archivo){
+                break;
+            }
+
+            if (entrada.j_count !=0){
+                // Limpiar campos char[]
+                auto limpiar =[](const char* data, size_t maxLen){
+                    string s(data, maxLen);
+                    size_t nul=s.find('\0');
+                    if (nul != string::npos) s = s.substr(0, nul);
+                    while (!s.empty() && (s.back()== ' ' || s.back() == '\r' || s.back() =='\n' || s.back() == '\t')) {
+                        s.pop_back();
+                    }
+                    return s;
+                };
+
+                string op = limpiar(entrada.j_content.i_operation, 10);
+                string pth =limpiar(entrada.j_content.i_path, 32);
+                string con = limpiar(entrada.j_content.i_content, 64);
+                float fecha =entrada.j_content.i_date;
+
+                if (!primera) {
+                    salida << ",";
+                }
+                primera=false;
+
+                salida<< "{";
+                salida << "\"no\":"        << entrada.j_count              << ",";
+                salida << "\"operation\":\"" << Json::escapar(op)           << "\",";
+                salida << "\"path\":\""     << Json::escapar(pth)             << "\",";
+                salida<< "\"content\":\""  << Json::escapar(con)             << "\",";
+                salida << "\"date\":"     <<fecha;
+                salida << "}";
+            }
+            offset += sizeof(Estructuras::JOURNAL);
+        }
+        archivo.close();
+        salida <<"]}";
+        return salida.str();
+    }
+
 
     void iniciarServidor(){
         svr =new httplib::Server();
@@ -280,6 +417,50 @@ namespace Server{
             if (json.empty()) {
                 res.status = 500;
                 res.set_content("{\"error\":\"" + Json::escapar(errMsg) + "\"}", "application/json");
+                return;
+            }
+            res.set_content(json, "application/json");
+        });
+
+        //GET /api/fs/file?id=<ID>&path=<ruta>
+        svr->Get("/api/fs/file", [](const httplib::Request& req, httplib::Response& res) {
+            setCors(res);
+
+            if (!req.has_param("id") || !req.has_param("path")) {
+                res.status=400;
+                res.set_content("{\"error\":\"faltan parametros id y path\"}", "application/json");
+                return;
+            }
+
+            string id= req.get_param_value("id");
+            string ruta=req.get_param_value("path");
+
+            string errMsg;
+            string json = leerArchivoTexto(id, ruta, errMsg);
+            if (json.empty()) {
+                res.status = 500;
+                res.set_content("{\"error\":\"" + Json::escapar(errMsg) + "\"}", "application/json");
+                return;
+            }
+            res.set_content(json, "application/json");
+        });
+
+        //GET /api/fs/journal?id=<ID
+        svr->Get("/api/fs/journal", [](const httplib::Request& req, httplib::Response& res) {
+            setCors(res);
+
+            if (!req.has_param("id")){
+                res.status = 400;
+                res.set_content("{\"error\":\"falta parametro id\"}", "application/json");
+                return;
+            }
+
+            string id=req.get_param_value("id");
+            string errMsg;
+            string json = leerJournal(id, errMsg);
+            if (json.empty()) {
+                res.status=500;
+                res.set_content("{\"error\":\"" +Json::escapar(errMsg) + "\"}","application/json");
                 return;
             }
             res.set_content(json, "application/json");

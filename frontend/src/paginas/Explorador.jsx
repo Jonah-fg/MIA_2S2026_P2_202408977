@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
-import {obtenerDiscos, obtenerParticiones,listarCarpeta,} from "../servicios/api";
+
+import {obtenerDiscos, obtenerParticiones,listarCarpeta, leerArchivo} from "../servicios/api";
 import "../estilos/explorador.css";
 
 export default function Explorador({alIrATerminal }){
     const [discos, setDiscos]= useState([]);
     const [nivel, setNivel] = useState("discos");
     const [particiones, setParticiones]=useState([]);
-    const [items, setItems] = useState([]);
+    const [items, setItems]= useState([]);
 
     const [discoActual, setDiscoActual] = useState(null);
      const [particionActual, setParticionActual]=useState(null);
     const [cargando, setCargando] =useState(true);
     const [pathActual, setPathActual] =useState("/");
-    const [archivoAbierto, setArchivoAbierto] = useState(null);
+    const [contenidoArchivo, setContenidoArchivo] = useState("");
+    const [archivoAbierto, setArchivoAbierto]=useState(null);
+    const [cargandoContenido, setCargandoContenido] =useState(false);
 
 
      useEffect(()=>{
@@ -58,13 +61,16 @@ export default function Explorador({alIrATerminal }){
         setItems(lista);
         setCargando(false);
     }
-    function abrirArchivo(item) {
-        setArchivoAbierto({
-            nombre: item.name,
-            size: item.size,
-            perm: item.perm,
-            path: pathActual=== "/" ? `/${item.name}` : `${pathActual}/${item.name}`,
-        });
+    async function abrirArchivo(item) {
+        const rutaCompleta=pathActual=== "/" ? `/${item.name}` : `${pathActual}/${item.name}`;
+
+        setArchivoAbierto({nombre: item.name, size: item.size, perm: item.perm, path: rutaCompleta,});
+        setContenidoArchivo("");
+        setCargandoContenido(true);
+
+        const contenido= await leerArchivo(particionActual.id, rutaCompleta);
+        setContenidoArchivo(contenido);
+        setCargandoContenido(false);
     }
 
     function subirNivel() {
@@ -247,9 +253,14 @@ export default function Explorador({alIrATerminal }){
                             <br />
                             Tamaño: {archivoAbierto.size}bytes
                         </p>
-                        <p className="explorador-vacio">
-                            (El contenido se mostrrá en la siguiente sub-fase)
-                        </p>
+
+                        <h4 className="explorador-subtitulo">Contenido:</h4>
+                        {cargandoContenido &&<p>Cargando...</p>}
+                        {!cargandoContenido &&(
+                            <pre className="explorador-contenido">
+                                {contenidoArchivo || "(archivo vacío)"}
+                            </pre>
+                        )}
                         <button
                             className="explorador-boton"
                             onClick={()=> setArchivoAbierto(null)}
