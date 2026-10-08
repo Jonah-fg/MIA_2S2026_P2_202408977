@@ -1,4 +1,4 @@
-const URL_BACKEND = "http://localhost:8080";
+const URL_BACKEND = "http://18.221.215.111:8080";
 /**
   Envía un comando (o varios, en formato script) al backend.
   @param {string} comando 
