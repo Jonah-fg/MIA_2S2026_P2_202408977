@@ -38,8 +38,7 @@ namespace Comandos {
     }
 
     // Navega la ruta y devuelve el inodo de la carpeta padre + el nombre de la carpeta final
-    static int buscarInodoPadre(const string& diskPath, const Estructuras::SUPERBLOCK& sb,
-                                const string& ruta, string& nombreCarpeta, string& errMsg) {
+    static int buscarInodoPadre(const string& diskPath, const Estructuras::SUPERBLOCK& sb, const string& ruta, string& nombreCarpeta, string& errMsg) {
         vector<string> partes = splitPath(ruta);
         if (partes.empty()) {
             errMsg = "Ruta vacía";
@@ -76,7 +75,7 @@ namespace Comandos {
         bool recursive = false;
 
         string atributos = joinTokens(tokens);
-        static const regex lexic(R"(-path="[^"]+"|-path=[^\s]+|-p)", regex::icase);
+        static const regex lexic(R"(-path="[^"]+"|-path=[^\s]+|-p|-r)", regex::icase);
 
         vector<string> found;
         auto begin = sregex_iterator(atributos.begin(), atributos.end(), lexic);
@@ -93,7 +92,7 @@ namespace Comandos {
         }
 
         for (const auto& fun : found) {
-            if (fun == "-p") {
+            if (fun == "-p" || fun=="-r"){
                 recursive = true;
                 continue;
             }
